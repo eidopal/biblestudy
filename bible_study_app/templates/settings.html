@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+
+{% block title %}每日圣经 - 设置{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">阅读经文设置</h4>
+            </div>
+            <div class="card-body">
+                <!-- Reading passages list -->
+                <div class="mb-4">
+                    <h5>当前阅读计划</h5>
+                    {% if reading_passages %}
+                        <ul class="list-group" id="reading-list">
+                            {% for passage in reading_passages %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ passage.book }} {{ passage.chapter }}
+                                    <button class="btn btn-sm btn-danger remove-reading" data-index="{{ loop.index0 }}">
+                                        <i class="bi bi-trash"></i> 删除
+                                    </button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="alert alert-info" id="reading-empty">
+                            <p>未设置阅读经文。请添加经文。</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Add reading form -->
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">添加阅读经文</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="reading-form" class="row g-3">
+                            <div class="col-md-12">
+                                <label for="reading-book" class="form-label">选择书卷</label>
+                                <select class="form-select" id="reading-book" required>
+                                    <option value="">请选择...</option>
+                                    <optgroup label="旧约">
+                                        {% for book in old_testament %}
+                                            <option value="{{ book }}">{{ book }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                    <optgroup label="新约">
+                                        {% for book in new_testament %}
+                                            <option value="{{ book }}">{{ book }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="reading-chapter" class="form-label">选择章节</label>
+                                <select class="form-select" id="reading-chapter" required>
+                                    <option value="">请先选择书卷...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">添加</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">背诵经文设置</h4>
+            </div>
+            <div class="card-body">
+                <!-- Memorization verses list -->
+                <div class="mb-4">
+                    <h5>当前背诵计划</h5>
+                    {% if memorization_verses %}
+                        <ul class="list-group" id="memorization-list">
+                            {% for verse in memorization_verses %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {% if verse.verse_end %}
+                                            {{ verse.book }} {{ verse.chapter }}:{{ verse.verse_start }}-{{ verse.verse_end }}
+                                        {% else %}
+                                            {{ verse.book }} {{ verse.chapter }}:{{ verse.verse_start }}
+                                        {% endif %}
+                                        
+                                        {% if verse.custom_text %}
+                                            <span class="badge bg-info ms-2">
+                                                <i class="bi bi-pencil-square"></i> 已手动输入
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <button class="btn btn-sm btn-danger remove-memorization" data-index="{{ loop.index0 }}">
+                                        <i class="bi bi-trash"></i> 删除
+                                    </button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="alert alert-info" id="memorization-empty">
+                            <p>未设置背诵经文。请添加经文。</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Add memorization form -->
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">添加背诵经文</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="memorization-form" class="row g-3">
+                            <div class="col-md-12">
+                                <label for="mem-book" class="form-label">选择书卷</label>
+                                <select class="form-select" id="mem-book" required>
+                                    <option value="">请选择...</option>
+                                    <optgroup label="旧约">
+                                        {% for book in old_testament %}
+                                            <option value="{{ book }}">{{ book }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                    <optgroup label="新约">
+                                        {% for book in new_testament %}
+                                            <option value="{{ book }}">{{ book }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="mem-chapter" class="form-label">选择章节</label>
+                                <select class="form-select" id="mem-chapter" required>
+                                    <option value="">请先选择书卷...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="mem-verse-start" class="form-label">开始经节</label>
+                                <input type="number" class="form-control" id="mem-verse-start" min="1" value="1" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="mem-verse-end" class="form-label">结束经节 (可选)</label>
+                                <input type="number" class="form-control" id="mem-verse-end" min="1" value="">
+                            </div>
+                            <div class="col-md-12">
+                                <label for="mem-custom-text" class="form-label">经文内容 (可选)</label>
+                                <textarea class="form-control" id="mem-custom-text" rows="3" placeholder="您可以在此处直接输入经文内容。如果留空，系统将尝试从在线API获取内容。"></textarea>
+                                <div class="form-text">
+                                    手动输入经文内容对于难以通过API获取的经文特别有用。
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-success">添加</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Get chapters for a book
+    function getChapters(book, targetSelect) {
+        fetch(`/api/chapters/${encodeURIComponent(book)}`)
+            .then(response => response.json())
+            .then(chapters => {
+                targetSelect.innerHTML = '';
+                chapters.forEach(chapter => {
+                    const option = document.createElement('option');
+                    option.value = chapter;
+                    option.textContent = chapter;
+                    targetSelect.appendChild(option);
+                });
+            });
+    }
+    
+    // Reading book selection
+    document.getElementById('reading-book').addEventListener('change', function() {
+        const book = this.value;
+        const chapterSelect = document.getElementById('reading-chapter');
+        
+        if (book) {
+            getChapters(book, chapterSelect);
+        } else {
+            chapterSelect.innerHTML = '<option value="">请先选择书卷...</option>';
+        }
+    });
+    
+    // Memorization book selection
+    document.getElementById('mem-book').addEventListener('change', function() {
+        const book = this.value;
+        const chapterSelect = document.getElementById('mem-chapter');
+        
+        if (book) {
+            getChapters(book, chapterSelect);
+        } else {
+            chapterSelect.innerHTML = '<option value="">请先选择书卷...</option>';
+        }
+    });
+    
+    // Add reading passage
+    document.getElementById('reading-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const book = document.getElementById('reading-book').value;
+        const chapter = document.getElementById('reading-chapter').value;
+        
+        if (!book || !chapter) {
+            alert('请选择书卷和章节');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('book', book);
+        formData.append('chapter', chapter);
+        
+        fetch('/api/add_reading', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload page to show updated list
+                window.location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    });
+    
+    // Remove reading passage
+    document.querySelectorAll('.remove-reading').forEach(button => {
+        button.addEventListener('click', function() {
+            const index = this.dataset.index;
+            
+            if (confirm('确定要删除这个阅读经文吗？')) {
+                fetch(`/api/remove_reading/${index}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload page to show updated list
+                        window.location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                });
+            }
+        });
+    });
+    
+    // Add memorization verse
+    document.getElementById('memorization-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const book = document.getElementById('mem-book').value;
+        const chapter = document.getElementById('mem-chapter').value;
+        const verseStart = document.getElementById('mem-verse-start').value;
+        const verseEnd = document.getElementById('mem-verse-end').value;
+        const customText = document.getElementById('mem-custom-text').value;
+        
+        if (!book || !chapter || !verseStart) {
+            alert('请选择书卷、章节和起始经节');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('book', book);
+        formData.append('chapter', chapter);
+        formData.append('verse_start', verseStart);
+        formData.append('verse_end', verseEnd);
+        formData.append('custom_text', customText);
+        
+        fetch('/api/add_memorization', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload page to show updated list
+                window.location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    });
+    
+    // Remove memorization verse
+    document.querySelectorAll('.remove-memorization').forEach(button => {
+        button.addEventListener('click', function() {
+            const index = this.dataset.index;
+            
+            if (confirm('确定要删除这个背诵经文吗？')) {
+                fetch(`/api/remove_memorization/${index}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload page to show updated list
+                        window.location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %} 

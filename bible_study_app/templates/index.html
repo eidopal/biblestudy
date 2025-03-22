@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}每日圣经 - 今日灵修{% endblock %}
+
+{% block content %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <strong>系统已更新!</strong> 现在您可以手动输入经文内容了！
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">{{ date }}</h4>
+                <div class="d-flex flex-column align-items-end">
+                    <h4 class="mb-0" id="current-time">{{ time }}</h4>
+                    <span>今年第 {{ day_of_year }} 天</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">今日阅读经文</h4>
+            </div>
+            <div class="card-body">
+                {% if reading_passages %}
+                    <ul class="list-group">
+                        {% for passage in reading_passages %}
+                            <li class="list-group-item">{{ passage }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <p>未设置阅读经文。请前往<a href="/settings" class="alert-link">设置页面</a>添加经文。</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">今日背诵经文</h4>
+                {% if verse_index >= 0 and current_user.is_authenticated and current_user.is_admin %}
+                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#editVerseModal">
+                    <i class="bi bi-pencil"></i> 编辑经文内容
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <h3 class="text-center mb-4">{{ mem_ref }}</h3>
+                <div class="p-3 border rounded bg-light">
+                    <p class="verse-text">{{ mem_text }}</p>
+                </div>
+                {% if has_custom_text %}
+                <div class="mt-2 text-muted text-end">
+                    <small><i class="bi bi-info-circle"></i> 手动输入的内容</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑经文模态框 -->
+{% if verse_index >= 0 and current_user.is_authenticated and current_user.is_admin %}
+<div class="modal fade" id="editVerseModal" tabindex="-1" aria-labelledby="editVerseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editVerseModalLabel">编辑经文内容 - {{ mem_ref }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editVerseForm">
+                    <input type="hidden" id="verseIndex" value="{{ verse_index }}">
+                    <div class="mb-3">
+                        <label for="customText" class="form-label">经文内容</label>
+                        <textarea class="form-control" id="customText" rows="5">{{ mem_text }}</textarea>
+                        <div class="form-text">
+                            您可以在此处输入经文内容。留空则自动从接口获取。
+                        </div>
+                    </div>
+                </form>
+                <div class="alert alert-info">
+                    <p><i class="bi bi-info-circle"></i> 手动输入的内容会保存到您的计划中。这对于那些难以通过API获取的经文特别有用。</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveVerseText">保存内容</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Update the time every second
+    function updateTime() {
+        fetch('/update_time')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('current-time').innerText = data.time;
+            });
+    }
+    
+    // Update time every second
+    setInterval(updateTime, 1000);
+    
+    // Save custom verse text
+    document.addEventListener('DOMContentLoaded', function() {
+        const saveBtn = document.getElementById('saveVerseText');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function() {
+                const index = document.getElementById('verseIndex').value;
+                const customText = document.getElementById('customText').value;
+                
+                // Send to server
+                fetch('/api/update_verse_text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'index': index,
+                        'custom_text': customText
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Close modal and reload page
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('editVerseModal'));
+                        modal.hide();
+                        
+                        // Show success message and reload
+                        alert('经文内容已成功更新！');
+                        window.location.reload();
+                    } else {
+                        alert('更新失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('发生错误: ' + error);
+                });
+            });
+        }
+    });
+</script>
+{% endblock %} 
